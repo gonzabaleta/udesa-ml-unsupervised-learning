@@ -64,14 +64,22 @@ class Autoencoder(nn.Module):
         x_hat = self.decoder(z)
         return x_hat
 
-    def encode(self, x: Tensor | np.ndarray) -> Tensor:
+    def encode(self, x: Tensor | np.ndarray, numpy=False) -> Tensor:
         if isinstance(x, np.ndarray):
             x = torch.tensor(x, dtype=torch.float32)
+
+        if numpy:
+            return self.encoder(x).detach().numpy()
+
         return self.encoder(x)
 
-    def decode(self, z: Tensor | np.ndarray) -> Tensor:
+    def decode(self, z: Tensor | np.ndarray, numpy=False) -> Tensor:
         if isinstance(z, np.ndarray):
             z = torch.tensor(z, dtype=torch.float32)
+
+        if numpy:
+            return self.decoder(z).detach().numpy()
+
         return self.decoder(z)
 
 
