@@ -1,18 +1,6 @@
 import numpy as np
 
 
-def standardize(
-    X: np.ndarray, mean: int = None, std: int = None
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-
-    if (mean is None) or (std is None):
-        mean = X.mean(axis=0)
-        std = X.std(axis=0)
-
-    X_std = (X - mean) / std
-    return X_std, mean, std
-
-
 def fit_pca(X: np.ndarray):
     covariance_matrix = np.cov(X.T)
     eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)

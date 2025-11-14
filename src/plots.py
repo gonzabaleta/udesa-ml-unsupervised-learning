@@ -91,7 +91,8 @@ def plot_explained_variance(
 
 def plot_reconstruction_comparison(
     original_images: np.ndarray,
-    reconstructed_images: np.ndarray,
+    reconstructed_images_pca: np.ndarray,
+    reconstructed_images_ae: np.ndarray = None,
     n_images: int = 10,
     filename: str = "reconstruction_comparison",
     seed: int = RANDOM_SEED,
@@ -100,7 +101,12 @@ def plot_reconstruction_comparison(
     np.random.seed(seed)
     indices = np.random.choice(len(original_images), n_images, replace=False)
 
-    fig, axes = plt.subplots(2, n_images, figsize=(2 * n_images, 6))
+    nrows = 3 if reconstructed_images_ae is not None else 2
+
+    fig, axes = plt.subplots(nrows, n_images, figsize=(2 * n_images, 2 * nrows))
+
+    if nrows == 2:
+        axes = axes.reshape(2, n_images)
 
     for i, idx in enumerate(indices):
         original = original_images[idx].reshape(IMAGE_SIZE)
@@ -108,9 +114,54 @@ def plot_reconstruction_comparison(
         axes[0, i].set_title("Original")
         axes[0, i].axis("off")
 
-        reconstructed = reconstructed_images[idx].reshape(IMAGE_SIZE)
-        axes[1, i].imshow(reconstructed, cmap="gray")
-        axes[1, i].set_title("Reconstrucción")
+        reconstructed_pca = reconstructed_images_pca[idx].reshape(IMAGE_SIZE)
+        axes[1, i].imshow(reconstructed_pca, cmap="gray")
+        axes[1, i].set_title("Reconstrucción PCA")
         axes[1, i].axis("off")
 
+        if reconstructed_images_ae is not None:
+            reconstructed_ae = reconstructed_images_ae[idx].reshape(IMAGE_SIZE)
+            axes[2, i].imshow(reconstructed_ae, cmap="gray")
+            axes[2, i].set_title("Reconstrucción AE")
+            axes[2, i].axis("off")
+
+    finalize_plot(filename)
+
+
+def plot_scatter_2d(
+    data: np.ndarray,
+    labels: np.ndarray = None,
+    xlabel="Componente 1",
+    ylabel="Componente 2",
+    figsize=(10, 8),
+    filename="2d_reduction",
+):
+    plt.figure(figsize=figsize)
+
+    if labels is not None:
+        unique_labels = np.unique(labels)
+        print(f"Unique labels: {unique_labels}")
+        markers = ["o", "s", "^", "v", "<", ">", "p", "*", "h", "H", "D", "d"]
+        cmap = plt.cm.get_cmap("tab20")
+
+        for i, label in enumerate(unique_labels):
+            mask = labels == label
+            color = cmap(i / len(unique_labels))
+            marker = markers[i % len(markers)]
+            plt.scatter(
+                data[mask, 0],
+                data[mask, 1],
+                color=color,
+                # marker=marker,
+                label=f"Clase {label}",
+                alpha=0.7,
+                s=50,
+            )
+
+            plt.legend()
+    else:
+        plt.scatter(data[:, 0], data[:, 1], alpha=0.7, s=50)
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     finalize_plot(filename)
