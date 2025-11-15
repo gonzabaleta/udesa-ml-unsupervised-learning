@@ -165,3 +165,139 @@ def plot_scatter_2d(
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     finalize_plot(filename)
+
+
+def plot_silhouette_comparison(
+    kmeans_results, gmm_results, figsize=(12, 8), filename="silhouette_comparison"
+):
+    """
+        Grafica silhouette score vs K para K-means y GMM en el mismo
+    gráfico
+
+        Args:
+            kmeans_results: Dict con keys=K y values=dict con
+    'silhouette_score'
+            gmm_results: Dict con keys=K y values=dict con
+    'silhouette_score'
+            figsize: Tuple con tamaño de la figura
+            filename: String con nombre del archivo para guardar
+    (opcional)
+    """
+
+    # Extraer datos de K-means
+    k_values_kmeans = list(kmeans_results.keys())
+    silhouette_kmeans = [kmeans_results[k]["silhouette_score"] for k in k_values_kmeans]
+
+    # Extraer datos de GMM
+    k_values_gmm = list(gmm_results.keys())
+    silhouette_gmm = [gmm_results[k]["silhouette_score"] for k in k_values_gmm]
+
+    # Encontrar mejores K
+    best_k_kmeans = k_values_kmeans[np.argmax(silhouette_kmeans)]
+    best_k_gmm = k_values_gmm[np.argmax(silhouette_gmm)]
+
+    plt.figure(figsize=figsize)
+
+    # Plot con labels que incluyen mejor K
+    plt.plot(
+        k_values_kmeans,
+        silhouette_kmeans,
+        "bo-",
+        label=f"K-means",
+        linewidth=2,
+        markersize=8,
+    )
+
+    plt.plot(
+        k_values_gmm,
+        silhouette_gmm,
+        "ro-",
+        label=f"GMM",
+        linewidth=2,
+        markersize=8,
+    )
+
+    plt.xlabel("Número de Clusters (K)")
+    plt.ylabel("Silhouette Score")
+    plt.title("Comparación Silhouette Score: K-means vs GMM")
+    plt.grid(True, alpha=0.3)
+
+    # Líneas verticales para mejores K
+    plt.axvline(
+        x=best_k_kmeans,
+        color="blue",
+        linestyle="--",
+        alpha=0.7,
+        label=f"Mejor K K-means = {best_k_kmeans}",
+    )
+    plt.axvline(
+        x=best_k_gmm,
+        color="red",
+        linestyle="--",
+        alpha=0.7,
+        label=f"Mejor K GMM = {best_k_gmm}",
+    )
+
+    plt.legend()
+
+    finalize_plot(filename=filename)
+
+
+def plot_elbow_method(
+    kmeans_results, gmm_results, figsize=(12, 8), filename="8_marginal_gains"
+):
+    """
+        Grafica la ganancia marginal para K-means y GMM
+
+        Args:
+            kmeans_results: Dict con keys=K y values=dict con 'losses'
+            gmm_results: Dict con keys=K y values=dict con
+    'log_likelihoods'
+            figsize: Tuple con tamaño de la figura
+            filename: String con nombre del archivo para guardar
+    (opcional)
+    """
+    import matplotlib.pyplot as plt
+
+    # Obtener K values ordenados
+    k_values_all = sorted(list(kmeans_results.keys()))
+    k_values_gains = k_values_all[1:]  # Empezar desde el segundo K
+
+    # Calcular ganancias marginales
+    kmeans_gains = []
+    gmm_gains = []
+
+    for i, k in enumerate(k_values_gains):
+        prev_k = k_values_all[i]  # K anterior
+
+        # K-means gain: cuánto BAJA el loss
+        loss_prev = kmeans_results[prev_k]["losses"][-1]
+        loss_curr = kmeans_results[k]["losses"][-1]
+        kmeans_gains.append(loss_prev - loss_curr)
+
+        # GMM gain: cuánto SUBE el log-likelihood
+        loglik_prev = gmm_results[prev_k]["log_likelihoods"][-1]
+        loglik_curr = gmm_results[k]["log_likelihoods"][-1]
+        gmm_gains.append(loglik_curr - loglik_prev)
+
+    # Crear subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    # Plot K-means gains
+    ax1.plot(k_values_gains, kmeans_gains, "bo-", linewidth=2, markersize=8)
+    ax1.set_xlabel("Número de Clusters (K)")
+    ax1.set_ylabel("Ganancia Marginal (Reducción de Loss)")
+    ax1.set_title("Ganancia Marginal: K-means")
+    ax1.grid(True, alpha=0.3)
+    ax1.axhline(y=0, color="black", linestyle="-", alpha=0.3)
+
+    # Plot GMM gains
+    ax2.plot(k_values_gains, gmm_gains, "ro-", linewidth=2, markersize=8)
+    ax2.set_xlabel("Número de Clusters (K)")
+    ax2.set_ylabel("Ganancia Marginal (Aumento de Log-Likelihood)")
+    ax2.set_title("Ganancia Marginal: GMM")
+    ax2.grid(True, alpha=0.3)
+    ax2.axhline(y=0, color="black", linestyle="-", alpha=0.3)
+
+    plt.tight_layout()
+    finalize_plot(filename=filename)

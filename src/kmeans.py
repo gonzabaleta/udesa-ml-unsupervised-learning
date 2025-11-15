@@ -1,8 +1,11 @@
 import numpy as np
+from src.utils import RANDOM_SEED
 
 
-def kmeans(X, k, tolerance=0.0001, max_iters=300):
+def kmeans(X, k, tolerance=0.0001, max_iters=300, seed=RANDOM_SEED):
     n_samples, n_features = X.shape
+    if seed:
+        np.random.seed(seed)
 
     # initialize each centroid in one random sample
     indices = np.random.choice(n_samples, k, replace=False)
