@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from src.utils import IMAGE_SIZE, CLASS_LABEL_NAME, RANDOM_SEED
 
 PLOTS_PATH = "plots/"
@@ -44,21 +45,22 @@ def plot_images_by_class(
     df: pd.DataFrame, n_classes=5, n_per_class=3, filename="initial_faces_by_class"
 ):
     classes = df[CLASS_LABEL_NAME].unique()[:n_classes]
-    figsize = (n_per_class * 5, n_classes * 5)
+    figsize = (n_classes * 5, n_per_class * 5)
 
-    fig, axes = plt.subplots(n_classes, n_per_class, figsize=figsize)
-    for i, class_ in enumerate(classes):
+    fig, axes = plt.subplots(n_per_class, n_classes, figsize=figsize)
+
+    for j, class_ in enumerate(classes):
         class_samples = df[df[CLASS_LABEL_NAME] == class_].sample(n_per_class)
 
-        for j in range(n_per_class):
-            pixels = class_samples.iloc[j, :-1].values
+        for i in range(n_per_class):
+            pixels = class_samples.iloc[i, :-1].values
             image = pixels.reshape(IMAGE_SIZE[0], IMAGE_SIZE[1])
             axes[i, j].imshow(image, cmap="gray")
             axes[i, j].axis("off")
-            axes[i, j].set_title(f"Clase: {class_samples.iloc[j, -1]}")
 
-        # add title for first image in class
-        axes[i, 0].set_ylabel(f"Clase {class_}")
+            # Solo title en la primera fila
+            if i == 0:
+                axes[i, j].set_title(f"Clase {class_}")
 
     finalize_plot(filename)
 
@@ -67,7 +69,7 @@ def plot_class_distribution(
     df: pd.DataFrame, figsize=(10, 5), filename="class_distribution"
 ):
     plt.figure(figsize=figsize)
-    df[CLASS_LABEL_NAME].value_counts().plot(kind="bar")
+    df[CLASS_LABEL_NAME].value_counts().plot(kind="bar", edgecolor=None)
     plt.xlabel("Clase")
     plt.ylabel("Cantidad")
     finalize_plot(filename)
@@ -84,8 +86,9 @@ def plot_explained_variance(
         np.cumsum(explained_variance_ratios),
     )
     plt.xlabel("Componente")
-    plt.ylabel("Proporción de varianza explicada")
-    plt.axhline(y=0.90, color="r", linestyle="--")
+    plt.ylabel("Proporción de varianza explicada acumulada")
+    plt.axhline(y=0.90, color="r", linestyle="--", label="90% de varianza explicada")
+    plt.legend()
     finalize_plot(filename)
 
 
@@ -111,26 +114,48 @@ def plot_reconstruction_comparison(
     for i, idx in enumerate(indices):
         original = original_images[idx].reshape(IMAGE_SIZE)
         axes[0, i].imshow(original, cmap="gray")
-        axes[0, i].set_title("Original")
-        axes[0, i].axis("off")
+        axes[0, i].set_xticks([])
+        axes[0, i].set_yticks([])
+        # Quitar bordes
+        for spine in axes[0, i].spines.values():
+            spine.set_visible(False)
+        # Ylabel solo en la primera columna con más espacio
+        if i == 0:
+            axes[0, i].set_ylabel("Original", rotation=90, va="center", labelpad=15)
 
         reconstructed_pca = reconstructed_images_pca[idx].reshape(IMAGE_SIZE)
         axes[1, i].imshow(reconstructed_pca, cmap="gray")
-        axes[1, i].set_title("Reconstrucción PCA")
-        axes[1, i].axis("off")
+        axes[1, i].set_xticks([])
+        axes[1, i].set_yticks([])
+        # Quitar bordes
+        for spine in axes[1, i].spines.values():
+            spine.set_visible(False)
+        # Ylabel solo en la primera columna con más espacio
+        if i == 0:
+            axes[1, i].set_ylabel(
+                "Reconstrucción PCA", rotation=90, va="center", labelpad=15
+            )
 
         if reconstructed_images_ae is not None:
             reconstructed_ae = reconstructed_images_ae[idx].reshape(IMAGE_SIZE)
             axes[2, i].imshow(reconstructed_ae, cmap="gray")
-            axes[2, i].set_title("Reconstrucción AE")
-            axes[2, i].axis("off")
+            axes[2, i].set_xticks([])
+            axes[2, i].set_yticks([])
+            # Quitar bordes
+            for spine in axes[2, i].spines.values():
+                spine.set_visible(False)
+            # Ylabel solo en la primera columna con más espacio
+            if i == 0:
+                axes[2, i].set_ylabel(
+                    "Reconstrucción AE", rotation=90, va="center", labelpad=15
+                )
 
     finalize_plot(filename)
 
 
-def plot_scatter_2d(
-    data: np.ndarray,
-    labels: np.ndarray = None,
+def plot_clusteres_2d(
+    data,
+    assignments,
     xlabel="Componente 1",
     ylabel="Componente 2",
     figsize=(10, 8),
@@ -138,32 +163,24 @@ def plot_scatter_2d(
 ):
     plt.figure(figsize=figsize)
 
-    if labels is not None:
-        unique_labels = np.unique(labels)
-        print(f"Unique labels: {unique_labels}")
-        markers = ["o", "s", "^", "v", "<", ">", "p", "*", "h", "H", "D", "d"]
-        cmap = plt.cm.get_cmap("tab20")
+    unique_clusters = np.unique(assignments)
+    colors = plt.cm.get_cmap("tab20")(np.linspace(0, 1, len(unique_clusters)))
 
-        for i, label in enumerate(unique_labels):
-            mask = labels == label
-            color = cmap(i / len(unique_labels))
-            marker = markers[i % len(markers)]
-            plt.scatter(
-                data[mask, 0],
-                data[mask, 1],
-                color=color,
-                # marker=marker,
-                label=f"Clase {label}",
-                alpha=0.7,
-                s=50,
-            )
-
-            plt.legend()
-    else:
-        plt.scatter(data[:, 0], data[:, 1], alpha=0.7, s=50)
+    for i, cluster in enumerate(unique_clusters):
+        mask = assignments == cluster
+        plt.scatter(
+            data[mask, 0],
+            data[mask, 1],
+            color=colors[i],
+            label=f"Cluster {cluster}",
+            alpha=0.7,
+            s=50,
+        )
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
+    plt.grid(True, alpha=0.3)
+    plt.legend()
     finalize_plot(filename)
 
 
@@ -219,7 +236,6 @@ def plot_silhouette_comparison(
 
     plt.xlabel("Número de Clusters (K)")
     plt.ylabel("Silhouette Score")
-    plt.title("Comparación Silhouette Score: K-means vs GMM")
     plt.grid(True, alpha=0.3)
 
     # Líneas verticales para mejores K
@@ -300,4 +316,158 @@ def plot_elbow_method(
     ax2.axhline(y=0, color="black", linestyle="-", alpha=0.3)
 
     plt.tight_layout()
+    finalize_plot(filename=filename)
+
+
+def get_40_colors():
+    """
+    Genera 40 colores combinando diferentes colormaps
+    """
+    colors1 = plt.cm.Set1(np.linspace(0, 1, 9))
+    colors2 = plt.cm.Set2(np.linspace(0, 1, 8))
+    colors3 = plt.cm.Set3(np.linspace(0, 1, 12))
+    colors4 = plt.cm.tab20(np.linspace(0, 1, 20))
+
+    # Combinar y tomar las primeras 40
+    all_colors = np.vstack([colors1, colors2, colors3, colors4[:11]])  # 9+8+12+11=40
+    return all_colors
+
+
+def plot_cluster_composition(assignments, y_true, figsize=(12, 8), filename=None):
+    """
+    Heatmap elegante de composición de clusters
+    """
+    unique_clusters = np.unique(assignments)
+    unique_classes = np.unique(y_true)
+
+    # Preparar datos
+    data = []
+    for cluster in unique_clusters:
+        cluster_data = []
+        total = np.sum(assignments == cluster)
+        for class_id in unique_classes:
+            count = np.sum((assignments == cluster) & (y_true == class_id))
+            cluster_data.append(count)
+        data.append(cluster_data)
+
+    data = np.array(data)
+
+    plt.figure(figsize=figsize)
+
+    # Colores distintivos
+    colors = get_40_colors()
+
+    bottom = np.zeros(len(unique_clusters))
+    for i, class_id in enumerate(unique_classes):
+        plt.bar(
+            unique_clusters,
+            data[:, i],
+            bottom=bottom,
+            label=f"Clase {class_id}",
+            color=colors[i],
+            alpha=0.8,
+        )
+        bottom += data[:, i]
+
+    plt.xlabel("Cluster")
+    plt.ylabel("Número de Muestras")
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", ncol=2)
+
+    finalize_plot(filename=filename)
+
+
+def plot_cluster_entropy(
+    assignments, y_true, figsize=(12, 6), filename="cluster_entropy"
+):
+    """
+    Grafica la entropía de cada cluster como medida de homogeneidad
+    """
+    unique_clusters = np.unique(assignments)
+    entropies = []
+    cluster_sizes = []
+
+    for cluster_id in unique_clusters:
+        mask = assignments == cluster_id
+        cluster_labels = y_true[mask]
+        cluster_sizes.append(len(cluster_labels))
+
+        # Calcular entropía
+        unique, counts = np.unique(cluster_labels, return_counts=True)
+        probabilities = counts / len(cluster_labels)
+        entropy = -np.sum(
+            probabilities * np.log2(probabilities + 1e-10)
+        )  # +epsilon para evitar log(0)
+        entropies.append(entropy)
+
+    plt.figure(figsize=figsize)
+
+    # Crear bar chart con colores basados en entropía (más rojo = más entropía)
+    colors = plt.cm.RdYlGn_r(np.array(entropies) / max(entropies))
+
+    plt.bar(unique_clusters, entropies, color=colors, alpha=0.8)
+
+    # Agregar texto con tamaño del cluster
+    for i, (cluster_id, entropy, size) in enumerate(
+        zip(unique_clusters, entropies, cluster_sizes)
+    ):
+        plt.text(
+            cluster_id,
+            entropy + 0.05,
+            f"n={size}",
+            ha="center",
+            va="bottom",
+            fontsize=9,
+        )
+
+    plt.xlabel("Cluster")
+    plt.ylabel("Entropía")
+    plt.grid(axis="y", alpha=0.3)
+
+    # Línea de referencia para entropía promedio
+    avg_entropy = np.mean(entropies)
+    plt.axhline(
+        y=avg_entropy,
+        color="red",
+        linestyle="--",
+        alpha=0.7,
+        label=f"Entropía promedio: {avg_entropy:.2f}",
+    )
+    plt.legend()
+
+    finalize_plot(filename=filename)
+
+    return entropies, cluster_sizes
+
+
+def plot_eigenvectors(W, n_components=5, figsize=None, filename=None):
+    if figsize is None:
+        # Calcular tamaño automático basado en número de componentes
+        cols = min(n_components, 5)
+        rows = (n_components + cols - 1) // cols
+        figsize = (cols * 3, rows * 3)
+
+    fig, axes = plt.subplots(rows, cols, figsize=figsize)
+
+    # Si solo hay una fila o columna, convertir a array 2D
+    if n_components == 1:
+        axes = [axes]
+    elif rows == 1 or cols == 1:
+        axes = axes.flatten()
+    else:
+        axes = axes.flatten()
+
+    for i in range(n_components):
+        eigenvector = W[:, i]
+        eigenface = eigenvector.reshape(IMAGE_SIZE)
+
+        ax = axes[i] if n_components > 1 else axes[0]
+
+        im = ax.imshow(eigenface, cmap="gray")
+        ax.set_title(f"Autovector {i+1}")
+        ax.axis("off")
+
+    # Ocultar subplots extras
+    for i in range(n_components, len(axes)):
+        axes[i].axis("off")
+
     finalize_plot(filename=filename)

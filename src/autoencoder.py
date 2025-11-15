@@ -82,6 +82,9 @@ class Autoencoder(nn.Module):
 
         return self.decoder(z)
 
+    def reconstruct(self, z: Tensor | np.ndarray, mu, sigma, numpy=False):
+        return self.decode(z, numpy) * sigma + mu
+
 
 def dataset_to_tensor(X_train, X_val):
     X_train_tensor = torch.tensor(X_train, dtype=torch.float32)

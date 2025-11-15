@@ -58,3 +58,34 @@ def select_subset_classes(data, labels, n_classes):
     selected_labels = unique_labels[:n_classes]
     mask = np.isin(labels, selected_labels)
     return data[mask], labels[mask]
+
+
+def analyze_cluster_homogeneity(assignments, y_true):
+    """
+        Analiza la homogeneidad de cada cluster
+    respecto a las clases reales
+
+        Args:
+            assignments: Array con asignaciones de
+    cluster
+            y_true: Array con clases reales
+    """
+    unique_clusters = np.unique(assignments)
+
+    print("=== ANÁLISIS DE HOMOGENEIDAD DE CLUSTERS ===\n")
+
+    for cluster_id in unique_clusters:
+        cluster_mask = assignments == cluster_id
+        cluster_labels = y_true[cluster_mask]
+        cluster_size = len(cluster_labels)
+
+        print(f"Cluster {cluster_id}  ({cluster_size} muestras):")
+
+        # Contar cada clase en este cluster
+        unique_classes, counts = np.unique(cluster_labels, return_counts=True)
+
+        for class_id, count in zip(unique_classes, counts):
+            percentage = count / cluster_size * 100
+            print(f"  Clase {class_id}: {count} muestras ({percentage:.1f}%)")
+
+    print()
