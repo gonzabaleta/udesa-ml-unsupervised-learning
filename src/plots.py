@@ -35,7 +35,7 @@ def plot_images(
             image = pixels.reshape(IMAGE_SIZE[0], IMAGE_SIZE[1])
             ax.imshow(image, cmap="gray")
             ax.axis("off")
-            ax.set_title(f"Class: {images_to_plot.iloc[i, -1]}")
+            ax.set_title(f"Clase: {images_to_plot.iloc[i, -1]}")
         ax.axis("off")
 
     finalize_plot(filename)
@@ -63,7 +63,7 @@ def plot_images_by_class(
             axes[i, j].axis("off")
 
             if i == 0:
-                axes[i, j].set_title(f"Class {class_}")
+                axes[i, j].set_title(f"Clase {class_}", fontsize=30)
 
     finalize_plot(filename)
 
@@ -76,8 +76,8 @@ def plot_class_distribution(
     """Plot distribution of samples across different classes."""
     plt.figure(figsize=figsize)
     df[CLASS_LABEL_NAME].value_counts().plot(kind="bar", edgecolor=None)
-    plt.xlabel("Class")
-    plt.ylabel("Count")
+    plt.xlabel("Clase")
+    plt.ylabel("Número de muestras")
     finalize_plot(filename)
 
 
@@ -92,9 +92,9 @@ def plot_explained_variance(
         range(1, len(explained_variance_ratios) + 1),
         np.cumsum(explained_variance_ratios),
     )
-    plt.xlabel("Component")
-    plt.ylabel("Cumulative Explained Variance Ratio")
-    plt.axhline(y=0.90, color="r", linestyle="--", label="90% explained variance")
+    plt.xlabel("Componente")
+    plt.ylabel("Varianza Explicada Acumulada (%)")
+    plt.axhline(y=0.90, color="r", linestyle="--", label="90% de varianza explicada")
     plt.legend()
     finalize_plot(filename)
 
@@ -136,9 +136,7 @@ def plot_reconstruction_comparison(
         for spine in axes[1, i].spines.values():
             spine.set_visible(False)
         if i == 0:
-            axes[1, i].set_ylabel(
-                "PCA Reconstruction", rotation=90, va="center", labelpad=15
-            )
+            axes[1, i].set_ylabel("PCA", rotation=90, va="center", labelpad=15)
 
         # Autoencoder
         if reconstructed_images_ae is not None:
@@ -150,7 +148,7 @@ def plot_reconstruction_comparison(
                 spine.set_visible(False)
             if i == 0:
                 axes[2, i].set_ylabel(
-                    "Autoencoder Reconstruction", rotation=90, va="center", labelpad=15
+                    "Autoencoder", rotation=90, va="center", labelpad=15
                 )
 
     finalize_plot(filename)
@@ -184,7 +182,7 @@ def plot_clusteres_2d(
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.grid(True, alpha=0.3)
-    plt.legend()
+    # plt.legend()
     finalize_plot(filename)
 
 
@@ -224,7 +222,7 @@ def plot_silhouette_comparison(
         markersize=8,
     )
 
-    plt.xlabel("Number of Clusters (K)")
+    plt.xlabel("Cantidad de Clusters (K)")
     plt.ylabel("Silhouette Score")
     plt.grid(True, alpha=0.3)
 
@@ -233,14 +231,14 @@ def plot_silhouette_comparison(
         color="blue",
         linestyle="--",
         alpha=0.7,
-        label=f"Best K K-means = {best_k_kmeans}",
+        label=f"Mejor K K-means = {best_k_kmeans}",
     )
     plt.axvline(
         x=best_k_gmm,
         color="red",
         linestyle="--",
         alpha=0.7,
-        label=f"Best K GMM = {best_k_gmm}",
+        label=f"Mejor K GMM = {best_k_gmm}",
     )
 
     plt.legend()
@@ -275,16 +273,16 @@ def plot_elbow_method(
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
     ax1.plot(k_values_gains, kmeans_gains, "bo-", linewidth=2, markersize=8)
-    ax1.set_xlabel("Number of Clusters (K)")
-    ax1.set_ylabel("Marginal Gain (Loss Reduction)")
-    ax1.set_title("Marginal Gains: K-means")
+    ax1.set_xlabel("Cantidad de Clusters (K)")
+    ax1.set_ylabel("Ganancia Marginal (Reducción de Loss)")
+    ax1.set_title("Ganancia Marginal: K-means")
     ax1.grid(True, alpha=0.3)
     ax1.axhline(y=0, color="black", linestyle="-", alpha=0.3)
 
     ax2.plot(k_values_gains, gmm_gains, "ro-", linewidth=2, markersize=8)
-    ax2.set_xlabel("Number of Clusters (K)")
-    ax2.set_ylabel("Marginal Gain (Log-Likelihood Increase)")
-    ax2.set_title("Marginal Gains: GMM")
+    ax2.set_xlabel("Cantidad de Clusters (K)")
+    ax2.set_ylabel("Ganancia Marginal (Aumento de Log-Likelihood)")
+    ax2.set_title("Ganancia Marginal: GMM")
     ax2.grid(True, alpha=0.3)
     ax2.axhline(y=0, color="black", linestyle="-", alpha=0.3)
 
@@ -333,15 +331,16 @@ def plot_cluster_composition(
             unique_clusters,
             data[:, i],
             bottom=bottom,
-            label=f"Class {class_id}",
+            label=f"Clase {class_id}",
             color=colors[i],
             alpha=0.8,
         )
         bottom += data[:, i]
 
     plt.xlabel("Cluster")
-    plt.ylabel("Number of Samples")
-    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", ncol=2)
+    plt.ylabel("Número de muestras")
+    plt.xticks(unique_clusters)
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", ncol=2)
 
     finalize_plot(filename=filename)
 
@@ -386,7 +385,7 @@ def plot_cluster_entropy(
         )
 
     plt.xlabel("Cluster")
-    plt.ylabel("Entropy")
+    plt.ylabel("Entropía")
     plt.grid(axis="y", alpha=0.3)
 
     avg_entropy = np.mean(entropies)
@@ -395,10 +394,10 @@ def plot_cluster_entropy(
         color="red",
         linestyle="--",
         alpha=0.7,
-        label=f"Average entropy: {avg_entropy:.2f}",
+        label=f"Entropía promedio: {avg_entropy:.2f}",
     )
     plt.legend()
-
+    plt.xticks(unique_clusters)
     finalize_plot(filename=filename)
 
     return entropies, cluster_sizes
@@ -434,7 +433,7 @@ def plot_eigenvectors(
         ax = axes[i] if n_components > 1 else axes[0]
 
         ax.imshow(eigenface, cmap="gray")
-        ax.set_title(f"Eigenvector {i+1}")
+        ax.set_title(f"Autovector {i+1}")
         ax.axis("off")
 
     for i in range(n_components, len(axes)):

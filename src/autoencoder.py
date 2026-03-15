@@ -230,6 +230,7 @@ def compare_models(
     X_val: np.ndarray,
     epochs: int,
     input_size: int,
+    patience: int = 30,
 ) -> Tuple[Dict[str, Any], str]:
     """Train multiple autoencoder models and compare performance."""
 
@@ -256,7 +257,7 @@ def compare_models(
             val_loader,
             epochs=epochs,
             lr=config["lr"],
-            patience=30,
+            patience=patience,
             min_delta=0.0001,
         )
 
